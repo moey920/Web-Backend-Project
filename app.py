@@ -30,6 +30,10 @@ parser = reqparse.RequestParser()
 parser.add_argument('id')
 parser.add_argument('name')
 
+@app.route('/')
+def hello() :
+    return {'_result' : 'hello'}
+
 
 """
 Board APIs - 게시판 CRUD
