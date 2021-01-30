@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>Netflix Database</h1>
+<a href="/">home</a> <a href="/list">list</a>
+
+<h2>Add a netflix</h2>
+<form action="/save" method="POST">
+  <table>
+    <tr><td>Show_id: </td><td><input name="show_id"></td></tr>
+    <tr><td>Type: </td><td><input name="type"></td></tr>
+    <tr><td>Title: </td><td><input name="title"></td></tr>
+    <tr><td>Director: </td><td><input name="director"></td></tr>
+    <tr><td>Cast: </td><td><input name="cast"></td></tr>
+    <tr><td>Country: </td><td><input name="country"></td></tr>
+    <tr><td>Date_added: </td><td><input name="date_added"></td></tr>
+    <tr><td>Release_year: </td><td><input name="release_year"></td></tr>
+    <tr><td>Rating: </td><td><input name="rating"></td></tr>
+    <tr><td>Duration: </td><td><input name="duration"></td></tr>
+    <tr><td>Listed_in: </td><td><input name="listed_in"></td></tr>
+    <tr><td>Description: </td><td><input name="description"></td></tr>
+  </table>
+<input type="submit" value="Save">
+</form>
+
+<h2>List netflix by title</h2>
+<form action="/get" method="POST">
+Title: <input name="title">
+<input type="submit" value="Get">
+</form>
+
+{% if error %}
+<div style="color:red;">
+  {{ error }}
+</div>
+{% endif %}
+
+</body>
+</html>

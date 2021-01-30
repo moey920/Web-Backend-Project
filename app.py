@@ -17,14 +17,13 @@ api = Api(app)
 
 db = pymysql.connect(
         user = 'root',
-        passwd = 'devpass',
+        passwd = '',
         host = '127.0.0.1',
         port = 3306,
-        db = 'elice_flask_board',
+        db = 'backend',
         charset = 'utf8'
     )
-cursor = db.cursor()
-
+cursor = db.cursor(pymysql.cursors.DictCursor)
 
 parser = reqparse.RequestParser()
 parser.add_argument('id')

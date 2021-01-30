@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>Netflix Database</h1>
+<a href="/">home</a> <a href="/list">list</a>
+
+<h2>List Title</h2>
+Total: {{ count }}
+
+<ul>
+{% for t in title %}
+  <li><a href="/netflix/{{ t.show_id }}">{{ t.title }}</a></li>
+{% endfor %}
+</ul>
+
+</body>
+</html>
