@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}회원가입{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <label for="fullname">이름</label>
+    <input name="fullname" id="fullname" required>
+    <label for="email">이메일</label>
+    <input name="email" id="email" required>
+    <label for="password">비밀번호</label>
+    <input type="password" name="password" id="password" required>
+    <input type="submit" value="회원가입하기">
+  </form>
+{% endblock %}
