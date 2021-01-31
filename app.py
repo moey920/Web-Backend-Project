@@ -1,7 +1,11 @@
 import pymysql
-from flask import Flask, jsonify, request, render_template, redirect, session, url_for
+from flask import Flask, jsonify, request, render_template, redirect, session, url_for, flash
 from flask_restful import reqparse, abort, Api, Resource
 from jinja2 import Template
+import bcrypt
+import re
+import sql
+
 
 # User API 구현을 위한 새로운 패키지 로드
 from flask import jsonify
@@ -28,10 +32,6 @@ cursor = db.cursor()
 
 # parser 변수를 통해 클라이언트로부터 전달 받는 인자들을 지정할 수 있다.
 parser = reqparse.RequestParser()
-
-@app.route('/')
-def hello() :
-    return render_template("base.html")
 
 
 """
@@ -163,54 +163,54 @@ app.config.from_mapping(SECRET_KEY='dev')
 
 @app.route("/")
 def home():
-    if session.get("logged_in"):
-        return render_template("index.html")
+    if session.get('logged_in'):
+        return render_template('loggedin.html')
     else:
-        return render_template("register.html")
+        return render_template('index.html')
 
-@app.route('/register', methods=('GET', 'POST'))
-def register():
-    if request.method == "POST":
-        fullname = request.form["fullname"]
-        email = request.form["email"]
-        password = request.form["password"]
-
-        print(fullname, email, password)
-        args = parser.parse_args()
-        sql = "INSERT INTO `user` (`fullname`,`email`,`password`) VALUES (%s, %s, %s)"
-        cursor.execute(sql, (fullname,email,password))
-        db.commit()
-        
-        return render_template("base.html")
-    else:
-        return render_template("register.html")
-
-
-@app.route('/login', methods=('GET', 'POST'))
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+    if request.method == 'POST':
+        name = request.form['username']
+        if name == '':
+            flash('아이디를 입력해주세요')
+            return render_template('login.html')
+        if str(request.form['password']) == '':
+            flash('비밀번호를 입력해주세요')
+            return render_template('login.html')
+        else:
+            password = (bcrypt.hashpw(str(request.form['password']).encode('UTF-8'), bcrypt.gensalt())).decode('utf-8')
+        userlist=sql.check_username()
+        passlist=(bcrypt.hashpw(sql.check_password(name).encode('UTF-8'), bcrypt.gensalt())).decode('utf-8')
         try:
-            result = {}
-            sql = "SELECT * FROM `user` WHERE email=%s AND password=%s" # 이메일과 패스워드이 입력값과 같은 것을 가져온다.
-            cursor.execute(sql,(email,password))
-            result = cursor.fetchall()
-            print(result)
-            if result:
-                session["loggde_in"] = True # 로그인 세션을 Ture로 변경한다
-                return render_template("base.html")
+            if name not in userlist:
+                return '일치하는 아이디가 없습니다'
+            elif password != passlist:
+                return '비밀번호가 틀렸습니다'
             else:
-                return "이메일 또는 패스워드가 일치하지 않습니다."
+                session['logged_in']=True
+                return redirect('index.html')       
         except:
-            return "이메일 또는 패스워드가 일치하지 않습니다."
+            return '로그인 실패'
     else:
-        return render_template("login.html")
+        return render_template('login.html')
 
-@app.route('/logout')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        #4번을 해보세요!
+        userinfo[request.form['username']]=str(request.form['password'])
+        return redirect(url_for('login'))
+    else:
+        return render_template('register.html')
+
+
+@app.route("/logout")
 def logout():
-    session["logged_in"] = False
-    return render_template("board/index.html")
+    session['logged_in'] = False
+    return render_template('index.html')
+
 
 
 

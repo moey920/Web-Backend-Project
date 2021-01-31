@@ -1,3 +1,6 @@
 python-env/
 .vscode
 .png
+templates/auth/
+templates/board/
+templates/base.html
