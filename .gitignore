@@ -4,3 +4,10 @@ python-env/
 templates/auth/
 templates/board/
 templates/base.html
+db.py
+launcher.py
+mongo.py
+user.py
+solution.sql
+image-1.png
+image.png

@@ -4,26 +4,16 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>HTML for python flask</title>
+    <title>노하람 게시판</title>
 </head>
 
 <body>
   
 
     <form action = "" method="post">
-        <p>name : <input type="text" id = "username" name = "username"></p>
+        <p>email : <input type="email" id = "email" name = "email"></p>
         <p>password : <input type="password" id = "password" name = "password"></p>
-        <p>이름과 비밀번호를 입력하고 로그인버튼을 누르세요.<br><input type = "submit" value = "로그인"/> </p>
+        <p>이메일과 비밀번호를 입력하고 로그인버튼을 누르세요.<br><input type = "submit" value = "로그인"/> </p>
     </form>
-    {% with messages = get_flashed_messages() %}
-	{% if messages %}
-	{% for message in messages %}
-	<!--{{ message }}-->
-	<script>		
-		alert('{{message}}')   //이 부분이 중요
-	</script>
-	{% endfor %}
-	{% endif %}
-{% endwith %}
 </body>
 </html>

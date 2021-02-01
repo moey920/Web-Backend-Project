@@ -1,10 +1,11 @@
 import pymysql
-from flask import Flask, jsonify, request, render_template, redirect, session, url_for, flash
+from flask import Flask, jsonify, request, render_template, redirect, session, url_for, flash, g
 from flask_restful import reqparse, abort, Api, Resource
 from jinja2 import Template
 import bcrypt
 import re
 import sql
+import json
 
 
 # User API 구현을 위한 새로운 패키지 로드
@@ -145,11 +146,6 @@ User API는 CRUD를 지키는 REST API 타입으로 생성할 필요는 없습�
 따라서 이 실습에서는 CRUD를 다 지키지 않는 Login API를 구현합니다.
 1번에 해당하는 “User APIs : 유저 SignUp / Login / Logout”를 직접 구현해보세요!
 user 테이블 또한 직접 생생하셔야 합니다.
-
-User APIs : 유저 SignUp / Login / Logout
-SignUp API : fullname, email, password 을 입력받아 새로운 유저를 가입시킵니다.
-Login API : email, password 를 입력받아 특정 유저로 로그인합니다.
-Logout API : 현재 로그인 된 유저를 로그아웃합니다.
 """
 
 # User APIs에서 사용한 args 들
@@ -161,58 +157,98 @@ parser.add_argument('password')
 # session을 위한 secret_key 설정
 app.config.from_mapping(SECRET_KEY='dev')
 
-@app.route("/")
-def home():
-    if session.get('logged_in'):
-        return render_template('loggedin.html')
-    else:
-        return render_template('index.html')
+@app.route('/')
+def load_logged_in_user():
+    # 현재 session에 등록된 유저의 정보 획득
+    user_id = session.get('user_id')
+    args = parser.parse_args()
+    sql = "SELECT * FROM `user` WHERE `id`=%s"
+    cursor.execute(sql, (id,))
+    result = cursor.fetchone()
+    
+    return jsonify(status = "success", result = result)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        name = request.form['username']
-        if name == '':
-            flash('아이디를 입력해주세요')
-            return render_template('login.html')
-        if str(request.form['password']) == '':
-            flash('비밀번호를 입력해주세요')
-            return render_template('login.html')
-        else:
-            password = (bcrypt.hashpw(str(request.form['password']).encode('UTF-8'), bcrypt.gensalt())).decode('utf-8')
-        userlist=sql.check_username()
-        passlist=(bcrypt.hashpw(sql.check_password(name).encode('UTF-8'), bcrypt.gensalt())).decode('utf-8')
-        try:
-            if name not in userlist:
-                return '일치하는 아이디가 없습니다'
-            elif password != passlist:
-                return '비밀번호가 틀렸습니다'
-            else:
-                session['logged_in']=True
-                return redirect('index.html')       
-        except:
-            return '로그인 실패'
-    else:
-        return render_template('login.html')
-
-
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=('GET', 'POST'))
 def register():
+    args = parser.parse_args()
+    # POST 요청을 받았다면?
     if request.method == 'POST':
-        #4번을 해보세요!
-        userinfo[request.form['username']]=str(request.form['password'])
-        return redirect(url_for('login'))
-    else:
-        return render_template('register.html')
+        # 아이디와 비밀번호를 폼에서 가져옵니다.
+        fullname = request.form['fullname']
+        email = request.form['email']
+        password = request.form['password']
+        error = None
+        
+        # 아이디가 없다면?
+        if not fullname:
+            error = 'fullname이 유효하지 않습니다.'
+        # email이 없다면?
+        elif not email:
+            error = 'email이 유효하지 않습니다.'
+        # 비밀번호가 없다면?
+        elif not password:
+            error = 'Password가 유효하지 않습니다.'
+        # 이름과 이메일과 비밀번호가 모두 있다면?
+        else :
+            sql = "SELECT * FROM `user` WHERE `id`=%s"
+            cursor.execute(sql, (id,))
+            result = cursor.fetchone() 
+            if result is not None:
+                error = '{} 계정은 이미 등록된 계정입니다.'.format(email)
+
+        # 에러가 발생하지 않았다면 회원가입 실행
+        if error is None:
+            args = parser.parse_args()
+            sql = "INSERT INTO `user` (`fullname`, `email`, `password`) VALUES (%s, %s, %s)"
+            cursor.execute(sql, (args['fullname'], args['email'], generate_password_hash(args['password'])))
+            db.commit()
+            return redirect(url_for('login'))
+        # 에러 메세지를 화면에 나타냅니다. (flashing)
+        flash(error)
+
+    return render_template('register.html')
 
 
-@app.route("/logout")
+@app.route('/login', methods=('GET', 'POST'))
+def login():
+    # POST 요청을 받았다면?
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        error = None
+        
+        args = parser.parse_args()
+        sql = "SELECT * FROM `user` WHERE `email` = %s"
+        cursor.execute(sql, (args['email']))
+        result = cursor.fetchone()
+        
+        # result = json.dumps(result)
+        return jsonify(status = "success", result = result)
+        # print(result)
+        
+        # 입력한 유저의 정보가 없을 때
+        if result is None:
+            error = '등록되지 않은 계정입니다.'
+        elif not check_password_hash(result[3], password) :
+            error = 'password가 틀렸습니다.'
+
+        # 정상적인 정보를 요청받았다면?
+        if error is None:
+            # 로그인을 위해 기존 session을 비웁니다.
+            session.clear()
+            # 지금 로그인한 유저의 정보로 session을 등록합니다.
+            session['user_id'] = result[0]
+            return redirect(url_for('loggedin'))
+
+        flash(error)
+
+    return redirect(url_for('board'))
+
+
+@app.route('/logout')
 def logout():
-    session['logged_in'] = False
-    return render_template('index.html')
-
-
-
+    session.pop('user_id')
+    return redirect(url_for('index'))
 
 """
 4. Dashboard APIs
@@ -229,7 +265,7 @@ class Dashboard(Resource):
             result = {}
             for i in range(1,count[0]+1):   
                 sql = "SELECT title, boardArticle.create_date FROM  `boardArticle` WHERE board_id = %s ORDER BY boardArticle.create_date DESC LIMIT %s"
-                cursor.execute(sql,(i,dashboard_num))
+                cursor.execute(sql,(i, dashboard_num))
                 result[i] = cursor.fetchall()
 
             return jsonify(status = "success", result= result)
